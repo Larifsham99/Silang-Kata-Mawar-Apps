@@ -1,26 +1,23 @@
 {
-  "id": "./index.html",
-  "name": "Mawar Aisyah Apps",
+  "name": "Mawar Aisyah Cari Kata",
   "short_name": "Misi Kata",
   "description": "Permainan Cari Kata Islamik Edisi Ejen Mawar Aisyah",
   "start_url": "./index.html",
-  "scope": "./",
   "display": "standalone",
   "background_color": "#022c22",
   "theme_color": "#064e3b",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "./icon.png",
+      "src": "icon.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
-      "src": "./icon.png",
+      "src": "icon.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     }
   ]
 }
