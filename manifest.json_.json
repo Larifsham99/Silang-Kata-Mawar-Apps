@@ -1,8 +1,8 @@
 {
-  "name": "Mawar Aisyah Cari Kata",
+  "name": "Mawar Aisyah Apps",
   "short_name": "Misi Kata",
   "description": "Permainan Cari Kata Islamik Edisi Ejen Mawar Aisyah",
-  "start_url": "./index.html",
+  "start_url": "./", 
   "display": "standalone",
   "background_color": "#022c22",
   "theme_color": "#064e3b",
