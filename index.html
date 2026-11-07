@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+        <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#064e3b">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cari Kata Misi Ejen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; touch-action: none; overflow: hidden; background-color: #064e3b; margin: 0; }
+
+        /* --- SKRIN & TRANSISI SINEMATIK (SMOOTH CROSSFADE) --- */
+        .screen {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            opacity: 0; visibility: hidden; pointer-events: none;
+            transform: scale(1.05); filter: blur(5px);
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), transform 1s cubic-bezier(0.4, 0, 0.2, 1), filter 1s ease-out;
+            z-index: 10;
+        }
+        .screen.active {
+            opacity: 1; visibility: visible; pointer-events: auto;
+            transform: scale(1); filter: blur(0);
+            z-index: 20;
+        }
+
+        /* --- ANIMASI INTRO MAWAR AISYAH --- */
+        .splash-bg { background: linear-gradient(135deg, #022c22, #064e3b); overflow: hidden; }
+        
+        .mawar-text {
+            font-size: 2.2rem; font-weight: 900;
+            background: linear-gradient(to right, #fda4af, #f43f5e, #fda4af);
+            -webkit-background-clip: text; color: transparent;
+            text-shadow: 0px 4px 15px rgba(244, 63, 94, 0.4);
+            animation: pulseText 2s infinite;
+        }
+        @keyframes pulseText { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        .baby-float { animation: floatBaby 3s ease-in-out infinite; }
+        @keyframes floatBaby { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        
+        .eye { transform-origin: center; animation: blink 4s infinite; }
+        @keyframes blink { 0%, 96%, 98% { transform: scaleY(1); } 97%, 99% { transform: scaleY(0.1); } }
+
+        .petal {
+            position: absolute; background-color: #f43f5e;
+            border-radius: 15px 0 15px 0;
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.2);
+            opacity: 0.8; pointer-events: none;
+            animation: fall linear forwards;
+        }
+        @keyframes fall {
+            0% { transform: translateY(-10vh) rotate(0deg) scale(0.5); opacity: 0; }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.8; }
+            100% { transform: translateY(110vh) rotate(360deg) scale(1.2); opacity: 0; }
+        }
+
+        /* --- CSS GAME --- */
+        .bg-particles { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background: #064e3b; overflow: hidden; }
+        .particle { position: absolute; border-radius: 50%; background: rgba(16, 185, 129, 0.2); animation: float 15s infinite linear; }
+        @keyframes float { 0% { transform: translateY(110vh) scale(0); opacity: 0; } 50% { opacity: 0.5; } 100% { transform: translateY(-10vh) scale(1.5); opacity: 0; } }
+
+        .grid-container {
+            display: grid; gap: 3px; background-color: #022c22; padding: 6px; border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(253, 224, 71, 0.2); relative;
+        }
+        .grid-cell {
+            background-color: #ecfdf5; color: #064e3b; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; border-radius: 6px; user-select: none; transition: transform 0.1s, background-color 0.2s;
+            aspect-ratio: 1/1; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .grid-cell.highlight { background-color: #fde047; color: #854d0e; transform: scale(1.05); }
+        .grid-cell.found { background-color: #10b981; color: white; border: 2px solid #047857; }
+        .word-found { text-decoration: line-through; color: #34d399; opacity: 0.5; transform: scale(0.95); }
+
+        .point-popup { position: absolute; font-weight: 900; text-shadow: 0px 3px 0px rgba(0,0,0,0.8); pointer-events: none; z-index: 50; animation: popupAnim 1s ease-out forwards; }
+        @keyframes popupAnim { 0% { transform: translate(-50%, 0) scale(0.5); opacity: 0; } 20% { transform: translate(-50%, -20px) scale(1.3); opacity: 1; } 100% { transform: translate(-50%, -60px) scale(1); opacity: 0; } }
+        .combo-text { position: fixed; top: 15%; left: 50%; transform: translateX(-50%) scale(0); font-size: 2.5rem; font-weight: 900; color: #fbbf24; text-shadow: 0 4px 10px rgba(0,0,0,0.7); z-index: 100; opacity: 0; pointer-events: none; white-space: nowrap; }
+        .combo-anim { animation: comboPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes comboPop { 0% { transform: translateX(-50%) scale(0); opacity: 0; } 50% { transform: translateX(-50%) scale(1.2); opacity: 1; } 100% { transform: translateX(-50%) scale(1); opacity: 0; } }
+
+        .arkib-scroll::-webkit-scrollbar { width: 6px; } .arkib-scroll::-webkit-scrollbar-track { background: #064e3b; border-radius: 10px; } .arkib-scroll::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-emerald-50 h-screen w-screen relative">
+
+    <div class="bg-particles" id="particles"></div>
+    <div id="combo-display" class="combo-text">COMBO x2!</div>
+
+    <!-- SKRIN 0: INTRO MAWAR AISYAH -->
+    <div id="screen-splash" class="screen active splash-bg items-center justify-center">
+        <div id="petal-container" class="absolute inset-0 overflow-hidden"></div>
+        
+        <div class="baby-float z-10">
+            <svg viewBox="0 0 200 200" width="180" height="180">
+                <circle cx="100" cy="95" r="75" fill="#2d1b11"/>
+                <circle cx="100" cy="110" r="65" fill="#ffe0cc"/>
+                <circle cx="60" cy="120" r="12" fill="#ffb3b3" opacity="0.7"/>
+                <circle cx="140" cy="120" r="12" fill="#ffb3b3" opacity="0.7"/>
+                <g class="eye" style="transform-origin: 70px 105px;"><circle cx="70" cy="105" r="6" fill="#1a0f0a"/></g>
+                <g class="eye" style="transform-origin: 130px 105px;"><circle cx="130" cy="105" r="6" fill="#1a0f0a"/></g>
+                <path d="M 85 130 Q 100 150 115 130" stroke="#1a0f0a" stroke-width="4" fill="none" stroke-linecap="round"/>
+                <path d="M 45 80 Q 100 50 155 80 Q 130 65 100 70 Q 70 65 45 80 Z" fill="#2d1b11"/>
+                <g transform="translate(25, 75) scale(0.9) rotate(-15)">
+                    <path d="M15,25 Q-5,40 5,50 Q20,30 15,25" fill="#10b981"/>
+                    <path d="M25,15 Q40,-5 50,5 Q30,20 25,15" fill="#10b981"/>
+                    <path d="M10,20 C0,0 25,-10 35,5 C50,-5 55,20 40,30 C50,45 25,50 15,35 C0,45 -10,20 10,20 Z" fill="#e11d48"/>
+                    <path d="M20,20 C15,10 30,5 35,15 C45,10 40,25 30,25 C35,35 20,30 20,20 Z" fill="#be123c"/>
+                    <circle cx="25" cy="20" r="4" fill="#fb7185"/>
+                </g>
+            </svg>
+        </div>
+
+        <div class="z-10 text-center mt-4">
+            <h1 class="mawar-text uppercase tracking-widest">Mawar Aisyah</h1>
+            <p class="text-emerald-100 font-bold tracking-widest text-sm mt-1">GAMES & APPS</p>
+        </div>
+    </div>
+
+    <!-- SKRIN 1: HOME (PROFIL) -->
+    <div id="screen-home" class="screen items-center justify-center px-6">
+        <h1 class="text-3xl font-black text-yellow-400 mb-1 drop-shadow-lg text-center mt-8">PROFIL PENGEMBARA</h1>
+        <div class="bg-emerald-900/90 border-2 border-yellow-500 rounded-2xl p-4 w-full max-w-xs text-center my-6 shadow-[0_0_15px_rgba(234,179,8,0.3)] backdrop-blur-sm">
+            <p class="text-xs text-emerald-300 font-bold uppercase mb-1">Gelaran Semasa</p>
+            <h2 id="home-rank" class="text-2xl font-black text-white mb-2">Pangkat</h2>
+            <div class="w-full bg-emerald-950 rounded-full h-3 mb-1 border border-emerald-700">
+                <div id="xp-bar" class="bg-gradient-to-r from-yellow-500 to-yellow-300 h-2.5 rounded-full" style="width: 0%; transition: width 1s ease;"></div>
+            </div>
+            <p class="text-xs text-yellow-200 font-bold"><span id="home-xp">0</span> XP Terkumpul</p>
+        </div>
+        <input type="text" id="player-name" placeholder="Nama Gelanggang (Cth: Mawar)" maxlength="15" 
+            class="w-full max-w-xs px-4 py-3 rounded-xl bg-emerald-800/90 border-2 border-emerald-500 text-white placeholder-emerald-400 text-center font-bold text-lg focus:outline-none focus:border-yellow-400 mb-4 backdrop-blur-sm">
+        <div class="w-full max-w-xs flex gap-2">
+            <button onclick="goToLevels()" class="flex-1 bg-gradient-to-r from-yellow-500 to-yellow-400 text-emerald-900 font-black py-4 rounded-xl shadow-[0_5px_0_#ca8a04] active:translate-y-[5px] transition-all text-sm uppercase tracking-wider">
+                Mulakan Misi
+            </button>
+            <button onclick="openArkib()" class="bg-emerald-700 border-2 border-emerald-500 text-white font-black py-4 px-4 rounded-xl shadow-[0_5px_0_#047857] active:translate-y-[5px] transition-all text-xl" title="Pusat Arkib">📜</button>
+        </div>
+    </div>
+
+    <!-- SKRIN 2: ARKIB -->
+    <div id="screen-arkib" class="screen items-center pt-6 px-4 bg-emerald-950/90 backdrop-blur-md">
+        <h2 class="text-2xl font-black text-yellow-400 mb-2 uppercase mt-4">Pusat Arkib & Rekod</h2>
+        <div class="bg-emerald-900 w-full max-w-md rounded-xl p-3 border border-emerald-600 mb-4 flex justify-between text-center shadow-inner">
+            <div><p class="text-[10px] text-emerald-400 font-bold uppercase">Rantaian Tertinggi</p><p class="text-lg font-black text-white" id="arkib-streak">0</p></div>
+            <div><p class="text-[10px] text-emerald-400 font-bold uppercase">Total XP</p><p class="text-lg font-black text-yellow-400" id="arkib-xp">0</p></div>
+            <div><p class="text-[10px] text-emerald-400 font-bold uppercase">Kamus Dibuka</p><p class="text-lg font-black text-white"><span id="arkib-word-count">0</span>/48</p></div>
+        </div>
+        <div class="flex-grow w-full max-w-md bg-emerald-900 rounded-xl border-2 border-emerald-700 p-3 overflow-y-auto arkib-scroll space-y-2 mb-4" id="arkib-list"></div>
+        <button onclick="switchScreen('screen-home')" class="mb-6 w-full max-w-md bg-emerald-700 border-2 border-emerald-500 font-black py-3 rounded-xl shadow-[0_4px_0_#047857] active:translate-y-[4px] transition-all uppercase">Kembali ke Profil</button>
+    </div>
+
+    <!-- SKRIN 3: PILIH TAHAP -->
+    <div id="screen-levels" class="screen items-center justify-center px-4">
+        <div class="bg-emerald-900/90 px-4 py-2 rounded-full border border-emerald-600 mb-6 flex items-center gap-2 backdrop-blur-sm mt-4">
+            <span class="text-xl" id="greet-rank-icon">🚶</span><span id="greet-name" class="text-emerald-100 font-bold"></span>
+        </div>
+        <h2 class="text-2xl font-black text-yellow-400 mb-6 tracking-wide uppercase">Pilih Zon Misi</h2>
+        <div class="w-full max-w-sm space-y-4">
+            <button onclick="startGame(0)" class="w-full bg-emerald-800/95 border-2 border-emerald-500 rounded-2xl p-4 flex items-center justify-between shadow-lg active:scale-95 group">
+                <div class="text-left"><h3 class="text-xl font-black text-white">Zon Tenang</h3><p class="text-xs text-emerald-300">Lurus (6 Perkataan)</p></div>
+                <div class="bg-emerald-600 rounded-lg px-3 py-1 font-black text-yellow-400 text-sm border border-emerald-500">Mula</div>
+            </button>
+            <button onclick="startGame(1)" class="w-full bg-emerald-800/95 border-2 border-emerald-500 rounded-2xl p-4 flex items-center justify-between shadow-lg active:scale-95 group">
+                <div class="text-left"><h3 class="text-xl font-black text-white">Zon Tempur</h3><p class="text-xs text-emerald-300">Campur Serong (8 Perkataan)</p></div>
+                <div class="bg-emerald-600 rounded-lg px-3 py-1 font-black text-yellow-400 text-sm border border-emerald-500">Mula</div>
+            </button>
+            <button onclick="startGame(2)" class="w-full bg-gradient-to-r from-red-900 to-emerald-900 border-2 border-red-500 rounded-2xl p-4 flex items-center justify-between shadow-lg active:scale-95 group relative overflow-hidden">
+                <div class="absolute right-0 top-0 w-16 h-16 bg-red-500 opacity-20 rotate-45 transform origin-top-right"></div>
+                <div class="text-left relative z-10"><h3 class="text-xl font-black text-yellow-400">Zon Berdarah</h3><p class="text-xs text-emerald-200">Terbalik & Ekstrem (10 Perkataan)</p></div>
+                <div class="bg-red-700 rounded-lg px-3 py-1 font-black text-white text-sm border border-red-500 relative z-10">PRO</div>
+            </button>
+        </div>
+        <button onclick="switchScreen('screen-home')" class="mt-8 text-emerald-400 font-bold text-sm bg-emerald-900 px-6 py-3 rounded-full shadow-md">Kembali ke Profil</button>
+    </div>
+
+    <!-- SKRIN 4: PERMAINAN -->
+    <div id="screen-game" class="screen flex-col px-2 py-3">
+        <div class="w-full max-w-md mx-auto flex justify-between items-end mb-2 bg-emerald-800/90 p-3 rounded-2xl border-2 border-emerald-600 shadow-md backdrop-blur-sm mt-2">
+            <div>
+                <p id="game-streak" class="text-[10px] text-yellow-400 font-black uppercase tracking-wider mb-1">Misi #1</p>
+                <p class="text-xl font-black text-white leading-none">XP: <span id="ui-score" class="text-yellow-400">0</span></p>
+            </div>
+            <div class="text-right">
+                <p id="ui-timer" class="text-2xl font-black text-white bg-emerald-950 px-3 py-1 rounded-lg border-2 border-emerald-500">00:00</p>
+            </div>
+        </div>
+        <div class="flex-grow flex flex-col justify-center items-center w-full relative" id="grid-wrapper">
+            <div id="game-grid" class="grid-container w-full max-w-[95vw] sm:max-w-md"></div>
+        </div>
+        <div class="w-full max-w-md mx-auto mt-2 bg-emerald-800/90 rounded-xl p-3 shadow-lg border-2 border-emerald-600 max-h-[140px] overflow-y-auto backdrop-blur-sm">
+            <div class="flex justify-between items-center mb-2 border-b border-emerald-600 pb-1">
+                <span class="text-xs text-emerald-200 font-bold uppercase">Sasaran Tersisa</span>
+                <span class="text-xs font-black bg-emerald-950 px-2 py-0.5 rounded text-yellow-400"><span id="word-count">0</span> Dijejaki</span>
+            </div>
+            <div id="word-list" class="flex flex-wrap gap-1.5 justify-center"></div>
+        </div>
+        <button onclick="quitGame()" class="mx-auto mt-4 mb-4 text-red-300 text-xs font-black bg-emerald-950 px-6 py-3 rounded-full border border-red-900 active:bg-red-900 transition-colors uppercase tracking-widest shadow-md">🏳️ Undur Diri</button>
+    </div>
+
+    <!-- MODAL MENANG -->
+    <div id="win-modal" class="fixed inset-0 bg-emerald-950/95 flex items-center justify-center hidden z-50 px-4 transition-opacity duration-500">
+        <div class="bg-gradient-to-b from-emerald-800 to-emerald-900 rounded-3xl p-5 text-center max-w-sm w-full shadow-2xl border-4 border-yellow-400 relative max-h-[90vh] overflow-y-auto arkib-scroll">
+            <h2 class="text-2xl font-black text-yellow-400 mb-1 mt-2 drop-shadow-md">MISI SELESAI!</h2>
+            <div class="bg-emerald-950 rounded-xl p-3 mb-3 shadow-inner border border-emerald-700 text-left space-y-1">
+                <div class="flex justify-between"><span class="text-emerald-400 font-bold text-xs">Masa Bertempur:</span> <span id="win-time" class="font-black text-white text-sm">0s</span></div>
+                <div class="flex justify-between"><span class="text-emerald-400 font-bold text-xs">XP Asas:</span> <span id="win-base" class="font-black text-white text-sm">0</span></div>
+                <div class="flex justify-between"><span class="text-yellow-500 font-bold text-xs">Bonus Kepantasan:</span> <span id="win-bonus" class="font-black text-yellow-500 text-sm">+0</span></div>
+                <div class="flex justify-between pt-2 border-t border-emerald-700"><span class="text-white font-black text-sm">TOTAL XP:</span> <span id="win-total" class="font-black text-xl text-yellow-400">0</span></div>
+            </div>
+            <div class="bg-gradient-to-br from-emerald-700 to-emerald-900 rounded-xl p-3 mb-4 border-2 border-emerald-500 shadow-md text-left relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 text-4xl opacity-20">💡</div>
+                <p class="text-[10px] text-yellow-300 font-black uppercase tracking-wider mb-1">💡 Info Hikmah</p>
+                <p class="text-sm font-bold text-white mb-1">Apa itu <span id="info-word" class="text-yellow-400 text-lg">???</span> ?</p>
+                <p id="info-def" class="text-xs text-emerald-100 leading-relaxed text-justify">Memuatkan definisi...</p>
+            </div>
+            <div class="flex flex-col gap-2">
+                <button onclick="playAgainSameLevel()" class="w-full bg-gradient-to-r from-yellow-500 to-yellow-400 text-emerald-900 font-black py-3 rounded-xl shadow-[0_4px_0_#ca8a04] active:translate-y-[4px] transition-all uppercase tracking-wider text-sm">🔥 Gempur Seterusnya!</button>
+                <button onclick="switchScreen('screen-levels')" class="w-full bg-emerald-950 text-emerald-300 border-2 border-emerald-700 font-bold py-3 rounded-xl active:bg-emerald-900 transition-all uppercase tracking-wide text-xs">Pilih Zon Lain</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT LOGIK -->
+    <script>
+        const kamusDict = {
+            "IMAN": "Kepercayaan yang teguh kepada Allah SWT di dalam hati, diikrarkan dengan lisan dan dibuktikan dengan amalan.",
+            "ISLAM": "Agama tauhid yang bermaksud tunduk, patuh, dan menyerah diri sepenuhnya kepada perintah Allah SWT.",
+            "PUASA": "Menahan diri daripada perkara yang membatalkannya dari terbit fajar hingga terbenam matahari beserta niat.",
+            "ZAKAT": "Mengeluarkan sebahagian harta tertentu untuk diberikan kepada golongan yang berhak (asnaf).",
+            "HAJI": "Mengunjungi Baitullah di Mekah untuk melakukan ibadah tertentu pada waktu tertentu dengan syaratnya.",
+            "SOLAT": "Ibadah yang merangkumi perkataan dan perbuatan tertentu, dimulai dengan takbiratul ihram dan disudahi salam.",
+            "DOA": "Senjata mukmin; permohonan, rayuan dan harapan seorang hamba kepada Allah SWT.",
+            "ZIKIR": "Mengingati Allah SWT sama ada melalui hati, lisan atau perbuatan untuk mendekatkan diri.",
+            "SURAU": "Tempat umat Islam berkumpul untuk menunaikan solat berjemaah dan aktiviti keagamaan.",
+            "SUCI": "Keadaan bersih daripada najis dan hadas, syarat sah ibadah seperti solat dan tawaf.",
+            "NIAT": "Lintasan dalam hati untuk melakukan sesuatu ibadah semata-mata kerana Allah SWT.",
+            "WAJIB": "Perkara yang mendapat pahala jika dilakukan dan berdosa jika ditinggalkan.",
+            "SUNAT": "Perkara yang mendapat pahala jika dilakukan dan tidak berdosa jika ditinggalkan.",
+            "AZAN": "Lafaz khusus yang dilaungkan untuk memberitahu masuknya waktu solat fardu.",
+            "DOSA": "Balasan buruk daripada Allah SWT akibat melanggar perintah-Nya.",
+            "SAH": "Ibadah atau muamalat yang dilakukan menepati syarat dan rukun yang ditetapkan syarak.",
+            "RUKUN": "Bahagian asas dalam ibadah yang wajib dilakukan; jika tertinggal, ibadah tidak sah.",
+            "UMRAH": "Ziarah ke Baitullah untuk melaksanakan tawaf, sa'ie dan bercukur bila-bila masa.",
+            "MASJID": "Rumah Allah; tempat suci umat Islam mendirikan solat berjemaah dan pusat komuniti.",
+            "SYURGA": "Tempat balasan yang penuh nikmat disediakan oleh Allah SWT untuk hamba-Nya yang beriman.",
+            "PAHALA": "Ganjaran baik yang dikurniakan oleh Allah SWT kepada hamba-Nya yang melakukan ketaatan.",
+            "QURAN": "Kalam Allah SWT yang diturunkan kepada Nabi Muhammad SAW sebagai petunjuk manusia.",
+            "SUNNAH": "Segala perkataan, perbuatan, takrir dan sifat yang bersumberkan daripada Rasulullah SAW.",
+            "HADIS": "Riwayat yang disampaikan daripada Rasulullah SAW sama ada ucapan, perbuatan atau takrir.",
+            "WUDUK": "Perbuatan membersihkan anggota badan tertentu dengan air mutlak berserta niat.",
+            "KIBLAT": "Arah Kaabah di Mekah yang wajib dihadap oleh umat Islam ketika solat.",
+            "NERAKA": "Tempat azab yang amat dahsyat disediakan oleh Allah SWT untuk golongan kafir.",
+            "BATAL": "Sesuatu ibadah yang rosak dan tidak sah kerana kehilangan syarat atau rukun.",
+            "MAKRUH": "Perkara yang digalakkan untuk ditinggalkan; mendapat pahala jika ditinggal.",
+            "HARUS": "Perbuatan yang diberi pilihan sama ada untuk dilakukan atau ditinggalkan.",
+            "IQAMAH": "Lafaz seruan yang diucapkan sebelum mendirikan solat berjemaah bermula.",
+            "TAUHID": "Ilmu yang membincangkan tentang keesaan Allah SWT dari segi zat, sifat dan perbuatan-Nya.",
+            "AQIDAH": "Kepercayaan dan keyakinan yang teguh dan pasti terikat di dalam hati.",
+            "AKHLAK": "Sifat atau tingkah laku yang tertanam dalam jiwa yang mendorong perbuatan baik.",
+            "MALAIKAT": "Makhluk ghaib yang diciptakan daripada cahaya, sentiasa taat dan tidak menderhaka.",
+            "RASULULLAH": "Utusan Allah, merujuk kepada Nabi Muhammad SAW yang membawa rahmat.",
+            "AKHIRAT": "Alam abadi selepas hari kiamat di mana manusia akan dihisab atas amalan.",
+            "SEDEKAH": "Pemberian sesuatu kepada orang lain yang memerlukan secara ikhlas.",
+            "TAWAKKAL": "Berserah diri sepenuhnya kepada ketentuan Allah SWT setelah berusaha sehabis baik.",
+            "ISTIGHFAR": "Lafaz memohon keampunan daripada Allah SWT atas dosa dan kesilapan.",
+            "MUKMIN": "Orang yang beriman dengan sebenar-benar iman di dalam hati, lisan dan perbuatan.",
+            "HIDAYAH": "Petunjuk dan bimbingan daripada Allah SWT kepada sesiapa yang dikehendaki-Nya.",
+            "SYAHADAH": "Kesaksian bahawa tiada Tuhan melainkan Allah dan Nabi Muhammad itu pesuruh Allah.",
+            "IKHLAS": "Melakukan amalan semata-mata mengharapkan keredhaan Allah tanpa riyak.",
+            "REDHA": "Menerima dengan hati yang lapang segala ketentuan dan takdir Allah SWT.",
+            "TAUBAT": "Kembali taat kepada Allah SWT dengan menyesali dosa yang lalu dan berazam tidak mengulangi.",
+            "DAKWAH": "Seruan dan ajakan kepada manusia untuk beriman dan taat kepada perintah Allah SWT.",
+            "SELAWAT": "Doa dan pujian ke atas Nabi Muhammad SAW, memohon rahmat untuk baginda."
+        };
+
+        const levels = [
+            { id: 0, name: "ZON TENANG", size: 8, pool: Object.keys(kamusDict).slice(0, 18), count: 6, directions: [[0, 1], [1, 0]] },
+            { id: 1, name: "ZON TEMPUR", size: 10, pool: Object.keys(kamusDict).slice(18, 34), count: 8, directions: [[0, 1], [1, 0], [1, 1]] },
+            { id: 2, name: "ZON BERDARAH", size: 12, pool: Object.keys(kamusDict).slice(34, 48), count: 10, directions: [[0, 1], [1, 0], [1, 1], [-1, 1], [0, -1], [-1, 0]] }
+        ];
+
+        let playerName = ""; let totalXP = 0; let streak = 1; let maxStreak = 0; let unlockedWords = [];
+        let currentLevel = null; let grid = []; let wordsToFind = []; let wordsFound = [];
+        let score = 0; let timeElapsed = 0; let timerInterval; let lastFindTime = 0; let currentCombo = 1;
+        let isDragging = false; let startCell = null; let currentHighlightedCells = [];
+
+        const gridEl = document.getElementById('game-grid'); const gridWrapper = document.getElementById('grid-wrapper');
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        const ranks = [
+            { max: 2000, name: "Musafir Baru", icon: "🚶" }, { max: 5000, name: "Pencari Ilmu", icon: "📖" },
+            { max: 12000, name: "Pendekar Kata", icon: "⚔️" }, { max: 25000, name: "Pujangga Hikmah", icon: "📜" },
+            { max: 9999999, name: "Lagenda Terbilang", icon: "👑" }
+        ];
+
+        function getRank(xp) { for (let r of ranks) { if (xp < r.max) return r; } return ranks[ranks.length-1]; }
+
+        function updateProfileUI() {
+            let rank = getRank(totalXP);
+            document.getElementById('home-rank').innerText = rank.name; document.getElementById('home-xp').innerText = totalXP;
+            let prevMax = ranks.findIndex(r => r.name === rank.name) > 0 ? ranks[ranks.findIndex(r => r.name === rank.name)-1].max : 0;
+            let range = rank.max - prevMax, currentProgress = totalXP - prevMax;
+            document.getElementById('xp-bar').style.width = Math.min(100, Math.max(0, (currentProgress / range) * 100)) + "%";
+        }
+
+        function createRosePetals() {
+            const container = document.getElementById('petal-container');
+            for(let i=0; i<12; i++) {
+                let p = document.createElement('div'); p.className = 'petal';
+                p.style.left = Math.random() * 100 + 'vw'; p.style.animationDuration = (Math.random() * 3 + 2) + 's'; p.style.animationDelay = (Math.random() * 2) + 's';
+                container.appendChild(p);
+            }
+        }
+        
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for(let i=0; i<15; i++) {
+                let div = document.createElement('div'); div.className = 'particle';
+                let size = Math.random() * 30 + 10; div.style.width = size + 'px'; div.style.height = size + 'px'; div.style.left = Math.random() * 100 + 'vw';
+                div.style.animationDuration = (Math.random() * 10 + 10) + 's'; div.style.animationDelay = (Math.random() * 10) + 's';
+                container.appendChild(div);
+            }
+        }
+
+        function switchScreen(screenId) {
+            // Logik Transisi Smooth: Buang kelas 'active' pada semua, letak pada screen terpilih
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            document.getElementById('win-modal').classList.add('hidden');
+        }
+
+        window.onload = () => {
+            createParticles();
+            createRosePetals();
+            
+            // Masuk profil dengan lancar selepas 3.5s
+            setTimeout(() => {
+                playerName = localStorage.getItem('cariKataProfile') || "";
+                totalXP = parseInt(localStorage.getItem('cariKataXP') || '0');
+                maxStreak = parseInt(localStorage.getItem('cariKataMaxStreak') || '0');
+                let savedWords = localStorage.getItem('cariKataUnlocked');
+                if(savedWords) unlockedWords = JSON.parse(savedWords);
+                if(playerName) document.getElementById('player-name').value = playerName;
+                updateProfileUI();
+                
+                switchScreen('screen-home'); // Terus masuk Home!
+            }, 3500); 
+        };
+
+        function openArkib() {
+            document.getElementById('arkib-streak').innerText = maxStreak; document.getElementById('arkib-xp').innerText = totalXP;
+            document.getElementById('arkib-word-count').innerText = unlockedWords.length;
+            let listHTML = "";
+            Object.keys(kamusDict).forEach(word => {
+                if(unlockedWords.includes(word)) {
+                    listHTML += `<div class="bg-emerald-800 p-2 rounded border border-emerald-600"><p class="font-black text-yellow-400 text-sm">${word}</p><p class="text-[11px] text-emerald-100">${kamusDict[word]}</p></div>`;
+                } else {
+                    listHTML += `<div class="bg-emerald-900/50 p-2 rounded border border-emerald-800 opacity-60 flex justify-between items-center"><p class="font-bold text-emerald-600 text-sm">???</p><span class="text-xs text-emerald-700">Terkunci 🔒</span></div>`;
+                }
+            });
+            document.getElementById('arkib-list').innerHTML = listHTML; switchScreen('screen-arkib');
+        }
+
+        function goToLevels() {
+            let nameInput = document.getElementById('player-name').value.trim();
+            if (!nameInput) { alert("Daftar nama ejen anda dahulu!"); return; }
+            playerName = nameInput; localStorage.setItem('cariKataProfile', playerName);
+            let rank = getRank(totalXP); document.getElementById('greet-name').innerText = playerName; document.getElementById('greet-rank-icon').innerText = rank.icon;
+            playBeep(600, 100); switchScreen('screen-levels');
+        }
+
+        function shuffleArray(array) { return array.sort(() => Math.random() - 0.5); }
+
+        function startGame(levelIndex) {
+            currentLevel = levels[levelIndex];
+            let selectedWords = shuffleArray([...currentLevel.pool]).slice(0, currentLevel.count);
+            wordsToFind = []; wordsFound = []; score = 0; timeElapsed = 0; currentCombo = 1;
+            document.getElementById('game-streak').innerText = `Rantaian Misi: Ke-${streak}`; updateUI();
+            generateGridData(selectedWords); renderGrid(); renderWordList(); setupTouchEvents();
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeElapsed++;
+                let m = Math.floor(timeElapsed / 60).toString().padStart(2, '0'), s = (timeElapsed % 60).toString().padStart(2, '0');
+                document.getElementById('ui-timer').innerText = `${m}:${s}`;
+            }, 1000);
+            switchScreen('screen-game'); playBeep(800, 150);
+        }
+        
+        function playAgainSameLevel() { streak++; startGame(currentLevel.id); }
+
+        function quitGame() {
+            clearInterval(timerInterval);
+            if(streak > maxStreak) { maxStreak = streak; localStorage.setItem('cariKataMaxStreak', maxStreak); }
+            streak = 1; updateProfileUI(); switchScreen('screen-levels');
+        }
+
+        function generateGridData(selectedWords) {
+            let { size, directions } = currentLevel;
+            grid = Array.from({ length: size }, () => Array(size).fill(''));
+            selectedWords.forEach(word => {
+                let placed = false, attempts = 0;
+                while (!placed && attempts < 300) {
+                    let dir = directions[Math.floor(Math.random() * directions.length)];
+                    let r = Math.floor(Math.random() * size), c = Math.floor(Math.random() * size);
+                    if (canPlaceWord(word, r, c, dir[0], dir[1], size)) {
+                        for (let i = 0; i < word.length; i++) grid[r + (i * dir[0])][c + (i * dir[1])] = word[i];
+                        placed = true; wordsToFind.push(word);
+                    } attempts++;
+                }
+            });
+            const abjad = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            for (let r = 0; r < size; r++) { for (let c = 0; c < size; c++) { if (grid[r][c] === '') grid[r][c] = abjad[Math.floor(Math.random() * abjad.length)]; } }
+        }
+
+        function canPlaceWord(word, r, c, dr, dc, size) {
+            for (let i = 0; i < word.length; i++) {
+                let nr = r + (i * dr), nc = c + (i * dc);
+                if (nr < 0 || nr >= size || nc < 0 || nc >= size) return false;
+                if (grid[nr][nc] !== '' && grid[nr][nc] !== word[i]) return false;
+            } return true;
+        }
+
+        function renderGrid() {
+            gridEl.innerHTML = ''; gridEl.style.gridTemplateColumns = `repeat(${currentLevel.size}, 1fr)`;
+            let fontSize = currentLevel.size > 10 ? 'text-xs sm:text-sm' : 'text-sm sm:text-base';
+            for (let r = 0; r < currentLevel.size; r++) {
+                for (let c = 0; c < currentLevel.size; c++) {
+                    let div = document.createElement('div'); div.className = `grid-cell ${fontSize}`; div.innerText = grid[r][c]; div.dataset.r = r; div.dataset.c = c; gridEl.appendChild(div);
+                }
+            }
+        }
+
+        function renderWordList() {
+            const listEl = document.getElementById('word-list'); listEl.innerHTML = '';
+            wordsToFind.forEach(word => {
+                let span = document.createElement('span'); span.className = `bg-emerald-900 text-emerald-100 text-[11px] sm:text-xs font-bold px-2 py-1 rounded border border-emerald-700 transition-all`;
+                span.innerText = word; span.id = `word-${word}`; listEl.appendChild(span);
+            }); updateUI();
+        }
+
+        function updateUI() { document.getElementById('ui-score').innerText = score; document.getElementById('word-count').innerText = wordsFound.length; }
+
+        function setupTouchEvents() {
+            gridEl.ontouchstart = handleStart; gridEl.ontouchmove = handleMove; gridEl.ontouchend = handleEnd;
+            gridEl.onmousedown = handleStart; window.onmousemove = handleMove; window.onmouseup = handleEnd;
+        }
+        function getCellFromEvent(e) {
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX, clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            let el = document.elementFromPoint(clientX, clientY); return el && el.classList.contains('grid-cell') ? el : null;
+        }
+        function handleStart(e) { e.preventDefault(); let cell = getCellFromEvent(e); if (cell) { isDragging = true; startCell = cell; highlightCells(startCell, startCell); playBeep(300, 30); } }
+        function handleMove(e) { if (!isDragging || !startCell) return; e.preventDefault(); let currentCell = getCellFromEvent(e); if (currentCell) highlightCells(startCell, currentCell); }
+        function handleEnd(e) { if (!isDragging) return; isDragging = false; checkWord(); clearHighlights(); startCell = null; }
+
+        function highlightCells(start, end) {
+            clearHighlights(); let r1 = parseInt(start.dataset.r), c1 = parseInt(start.dataset.c), r2 = parseInt(end.dataset.r), c2 = parseInt(end.dataset.c);
+            let dr = r2 - r1, dc = c2 - c1; if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) return; 
+            let stepR = dr === 0 ? 0 : dr / Math.abs(dr), stepC = dc === 0 ? 0 : dc / Math.abs(dc);
+            let length = Math.max(Math.abs(dr), Math.abs(dc)), r = r1, c = c1;
+            for (let i = 0; i <= length; i++) {
+                let cell = document.querySelector(`.grid-cell[data-r="${r}"][data-c="${c}"]`);
+                if (cell) { cell.classList.add('highlight'); currentHighlightedCells.push(cell); }
+                r += stepR; c += stepC;
+            }
+        }
+        function clearHighlights() { currentHighlightedCells.forEach(cell => cell.classList.remove('highlight')); currentHighlightedCells = []; }
+
+        function checkWord() {
+            if (currentHighlightedCells.length === 0) return;
+            let formedWord = currentHighlightedCells.map(c => c.innerText).join(''), reversedWord = formedWord.split('').reverse().join('');
+            let found = wordsToFind.find(w => w === formedWord || w === reversedWord);
+            
+            if (found && !wordsFound.includes(found)) {
+                wordsFound.push(found);
+                if(!unlockedWords.includes(found)) { unlockedWords.push(found); localStorage.setItem('cariKataUnlocked', JSON.stringify(unlockedWords)); }
+                let now = Date.now();
+                if(lastFindTime !== 0 && (now - lastFindTime < 8000)) { currentCombo++; showComboText(`COMBO x${currentCombo}!`); playBeep(900 + (currentCombo*100), 200); } 
+                else { currentCombo = 1; playBeep(900, 150); }
+                lastFindTime = now;
+
+                let wordScore = 100 * currentCombo; score += wordScore;
+                currentHighlightedCells.forEach(cell => { cell.classList.add('found'); }); document.getElementById(`word-${found}`).classList.add('word-found');
+                let textColor = currentCombo > 1 ? '#fbbf24' : '#ffffff';
+                showFloatingScore(currentHighlightedCells[Math.floor(currentHighlightedCells.length/2)], `+${wordScore}`, textColor); updateUI();
+                if (wordsFound.length === wordsToFind.length) setTimeout(gameOver, 800);
+            }
+        }
+
+        function showComboText(text) { let el = document.getElementById('combo-display'); el.innerText = text; el.classList.remove('combo-anim'); void el.offsetWidth; el.classList.add('combo-anim'); }
+        function showFloatingScore(cellEl, text, color) {
+            let rect = cellEl.getBoundingClientRect(), wrapperRect = gridWrapper.getBoundingClientRect(), popup = document.createElement('div');
+            popup.className = 'point-popup'; popup.innerText = text; popup.style.color = color;
+            popup.style.left = (rect.left - wrapperRect.left + (rect.width/2)) + 'px'; popup.style.top = (rect.top - wrapperRect.top) + 'px';
+            gridWrapper.appendChild(popup); setTimeout(() => popup.remove(), 1000); 
+        }
+
+        function gameOver() {
+            clearInterval(timerInterval);
+            if(streak > maxStreak) { maxStreak = streak; localStorage.setItem('cariKataMaxStreak', maxStreak); }
+            let baseScore = score, targetTime = (currentLevel.id + 1) * 100, timeBonus = Math.max(0, (targetTime - timeElapsed) * 10), matchTotal = baseScore + timeBonus + (streak * 50);
+            totalXP += matchTotal; localStorage.setItem('cariKataXP', totalXP);
+            document.getElementById('win-time').innerText = timeElapsed + " Saat"; document.getElementById('win-base').innerText = baseScore; document.getElementById('win-bonus').innerText = "+" + timeBonus; document.getElementById('win-total').innerText = matchTotal;
+            let randomWord = wordsToFind[Math.floor(Math.random() * wordsToFind.length)];
+            document.getElementById('info-word').innerText = randomWord; document.getElementById('info-def').innerText = kamusDict[randomWord];
+            document.getElementById('win-modal').classList.remove('hidden'); [600, 800, 1000, 1200, 1500].forEach((f, i) => setTimeout(() => playBeep(f, 150), i*150));
+        }
+
+        function playBeep(freq, duration) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration/1000);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration/1000);
+        }
+    </script>
+        <script>
+        // Mendaftar Service Worker untuk fungsi Offline / PWA Install
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Service Worker Berjaya Didaftar!'))
+                .catch(err => console.error('Service Worker Gagal:', err));
+            });
+        }
+    </script>
+</body>
+</html>
