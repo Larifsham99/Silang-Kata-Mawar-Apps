@@ -16,7 +16,7 @@ self.addEventListener('install', event => {
     );
 });
 
-// Padam cache versi lama (v1/v2) secara automatik
+// Padam cache versi lama secara automatik
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(keys => {
