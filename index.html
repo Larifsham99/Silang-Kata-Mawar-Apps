@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="ms">
 <head>
-        <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#064e3b">
-    <link rel="apple-touch-icon" href="icon.png">
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cari Kata Misi Ejen</title>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#064e3b">
+    <link rel="apple-touch-icon" href="icon.png">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
@@ -329,7 +331,6 @@
         }
 
         function switchScreen(screenId) {
-            // Logik Transisi Smooth: Buang kelas 'active' pada semua, letak pada screen terpilih
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
             document.getElementById('win-modal').classList.add('hidden');
@@ -339,7 +340,6 @@
             createParticles();
             createRosePetals();
             
-            // Masuk profil dengan lancar selepas 3.5s
             setTimeout(() => {
                 playerName = localStorage.getItem('cariKataProfile') || "";
                 totalXP = parseInt(localStorage.getItem('cariKataXP') || '0');
@@ -349,7 +349,7 @@
                 if(playerName) document.getElementById('player-name').value = playerName;
                 updateProfileUI();
                 
-                switchScreen('screen-home'); // Terus masuk Home!
+                switchScreen('screen-home');
             }, 3500); 
         };
 
@@ -518,11 +518,11 @@
             osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration/1000);
         }
     </script>
-        <script>
-        // Mendaftar Service Worker untuk fungsi Offline / PWA Install
+    <script>
+        // Mendaftar Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
+                navigator.serviceWorker.register('sw.js')
                 .then(reg => console.log('Service Worker Berjaya Didaftar!'))
                 .catch(err => console.error('Service Worker Gagal:', err));
             });
